@@ -26,7 +26,18 @@ graph.add_conditional_edges("chat", is_done)
 app = graph.compile()
 
 if __name__ == "__main__":
-    user_input = input("你: ")
-    state = {"messages": [HumanMessage(content=user_input)]}
-    for s in app.stream(state):
-        print("AI:", s['chat']['messages'][-1].content)
+    state: GraphState = {"messages": []}
+
+    while True:
+        user_input = input("你: ")
+        state["messages"].append(HumanMessage(content=user_input))
+
+        for output in app.stream(state):
+            # 只保留 chat 節點的輸出，維持結構一致
+            state = output["chat"]
+            ai_msg = state["messages"][-1]
+            print("AI:", ai_msg.content)
+
+        if is_done(state) == END:
+            print("對話結束。")
+            break
